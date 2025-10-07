@@ -1,0 +1,65 @@
+# config.yaml (Base Template for LoRA/QLoRA)
+
+# -----------------------------------------------------------------------------
+# General settings
+# -----------------------------------------------------------------------------
+seed: 42
+model_name: "meta-llama/Llama-3.2-1B"
+dataset: "knkarthick/samsum"
+prompt_template: "Summarize this:\n{dialogue}\nSummary:"
+max_length: 512
+train_split: "train"
+eval_split: "validation"
+method: "lora"   # Template; overridden to "qlora" or "full" in variants
+
+# -----------------------------------------------------------------------------
+# Quantization (for QLoRA only; ignored otherwise)
+# -----------------------------------------------------------------------------
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: "bfloat16"
+
+# -----------------------------------------------------------------------------
+# PEFT / LoRA settings (ignored for full fine-tuning)
+# -----------------------------------------------------------------------------
+peft:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# -----------------------------------------------------------------------------
+# HuggingFace TrainingArguments (cleaned/merged)
+# -----------------------------------------------------------------------------
+training_args:
+  ddp_find_unused_parameters: false
+  output_dir: "./outputs"  # Overridden per method
+  overwrite_output_dir: true
+  num_train_epochs: 3
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  learning_rate: 0.00005
+  fp16: true
+  bf16: false  # Explicit for fp16
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 3
+  load_best_model_at_end: true  # Auto-load best (min eval_loss)
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  logging_dir: "./logs"  # Overridden per method
+  logging_strategy: "steps"
+  logging_first_step: true
+  logging_steps: 10  # Balanced verbosity
+  report_to: "tensorboard"  # Systematic logging
+  optim: "paged_adamw_32bit"
+  warmup_ratio: 0.03
+  max_grad_norm: 0.5
+  weight_decay: 0.01  # Light regularization

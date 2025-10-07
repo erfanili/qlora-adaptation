@@ -1,0 +1,63 @@
+# config.yaml
+
+# -----------------------------------------------------------------------------
+# General settings
+# -----------------------------------------------------------------------------
+seed: 42
+model_name: "meta-llama/Llama-3.2-1B"
+dataset: "knkarthick/samsum"
+prompt_template: "Summarize this:\n{dialogue}\nSummary:"
+max_length: 512
+train_split: "train"
+eval_split: "validation"
+method: "qlora"   # or "lora"
+
+# -----------------------------------------------------------------------------
+# Quantization (for QLoRA only)
+# -----------------------------------------------------------------------------
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: "bfloat16"    # will be mapped to torch.bfloat16
+
+# -----------------------------------------------------------------------------
+# PEFT / LoRA settings
+# -----------------------------------------------------------------------------
+peft:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# -----------------------------------------------------------------------------
+# HuggingFace TrainingArguments
+# -----------------------------------------------------------------------------
+training_args:
+  ddp_find_unused_parameters: false 
+  output_dir: "./outputs_qlora"
+  overwrite_output_dir: true
+  num_train_epochs: 3
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  learning_rate: 0.00005
+  fp16: true
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  save_total_limit: 3
+  logging_dir: "./logs"
+  logging_steps: 50
+  report_to: "none"
+  optim: "paged_adamw_32bit"
+  warmup_ratio: 0.03
+  max_grad_norm: 0.5
+  report_to: "tensorboard"  # Or "wandb" for cloud
+  logging_dir: "./logs"     # Persists events (TensorBoard) or run ID (WandB)
+  logging_strategy: "steps"
+  logging_first_step: true  # Log initial state
+  logging_steps: 1
